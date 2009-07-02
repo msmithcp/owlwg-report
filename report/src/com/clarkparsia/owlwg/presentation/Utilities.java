@@ -7,6 +7,7 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -19,6 +20,7 @@ import com.clarkparsia.owlwg.testcase.Status;
 import com.clarkparsia.owlwg.testcase.SyntaxConstraint;
 import com.clarkparsia.owlwg.testcase.TestCase;
 import com.clarkparsia.owlwg.testcase.TestCaseVisitor;
+import com.clarkparsia.owlwg.testcase.filter.FilterCondition;
 import com.clarkparsia.owlwg.testrun.RunTestType;
 import com.clarkparsia.owlwg.testrun.TestRunResult;
 
@@ -133,5 +135,14 @@ public class Utilities {
 			return EnumSet.allOf( SyntaxConstraint.class );
 		else
 			return EnumSet.of( SyntaxConstraint.DL );
+	}
+
+	public static List<TestCase> match(FilterCondition filter, Collection<TestCase> cases) {
+		final List<TestCase> ret = new ArrayList<TestCase>();
+		for( TestCase t : cases )
+			if( filter.accepts( t ) )
+				ret.add( t );
+	
+		return ret;
 	}
 }

@@ -2,12 +2,17 @@ package com.clarkparsia.owlwg.presentation;
 
 import static com.clarkparsia.owlwg.Constants.RESULTS_ONTOLOGY_PHYSICAL_URI;
 import static com.clarkparsia.owlwg.Constants.TEST_ONTOLOGY_PHYSICAL_URI;
-import static com.clarkparsia.owlwg.presentation.Utilities.collectReasoningRunners;
-import static com.clarkparsia.owlwg.presentation.Utilities.collectSyntaxConstraintRunners;
-import static com.clarkparsia.owlwg.presentation.Utilities.indexByStatus;
+import static com.clarkparsia.owlwg.presentation.Utilities.match;
 import static com.clarkparsia.owlwg.presentation.Utilities.possibleReasoningRunTypes;
 import static com.clarkparsia.owlwg.presentation.Utilities.possibleSyntaxConstraintTests;
-import static java.lang.String.format;
+import static com.clarkparsia.owlwg.runner.ReadOnlyTestRunner.testRunner;
+import static com.clarkparsia.owlwg.testcase.filter.ConjunctionFilter.and;
+import static com.clarkparsia.owlwg.testcase.filter.DisjunctionFilter.or;
+import static com.clarkparsia.owlwg.testcase.filter.SatisfiedSyntaxConstraintFilter.DL;
+import static com.clarkparsia.owlwg.testcase.filter.SatisfiedSyntaxConstraintFilter.EL;
+import static com.clarkparsia.owlwg.testcase.filter.SatisfiedSyntaxConstraintFilter.QL;
+import static com.clarkparsia.owlwg.testcase.filter.StatusFilter.APPROVED;
+import static com.clarkparsia.owlwg.testcase.filter.StatusFilter.PROPOSED;
 
 import java.net.URI;
 import java.text.SimpleDateFormat;
@@ -19,11 +24,14 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
+import org.antlr.stringtemplate.CommonGroupLoader;
+import org.antlr.stringtemplate.StringTemplate;
+import org.antlr.stringtemplate.StringTemplateErrorListener;
+import org.antlr.stringtemplate.StringTemplateGroup;
+import org.antlr.stringtemplate.StringTemplateGroupLoader;
 import org.semanticweb.owl.apibinding.OWLManager;
 import org.semanticweb.owl.model.OWLOntology;
 import org.semanticweb.owl.model.OWLOntologyCreationException;
@@ -31,13 +39,14 @@ import org.semanticweb.owl.model.OWLOntologyManager;
 
 import com.clarkparsia.owlwg.TestCollection;
 import com.clarkparsia.owlwg.runner.TestRunner;
-import com.clarkparsia.owlwg.testcase.Status;
 import com.clarkparsia.owlwg.testcase.SyntaxConstraint;
 import com.clarkparsia.owlwg.testcase.TestCase;
+import com.clarkparsia.owlwg.testrun.RunResultType;
 import com.clarkparsia.owlwg.testrun.RunTestType;
 import com.clarkparsia.owlwg.testrun.SyntaxConstraintRun;
 import com.clarkparsia.owlwg.testrun.TestRunResult;
 import com.clarkparsia.owlwg.testrun.TestRunResultParser;
+import com.clarkparsia.owlwg.testrun.TestRunResultVisitor;
 
 /**
  * <p>
@@ -58,21 +67,115 @@ import com.clarkparsia.owlwg.testrun.TestRunResultParser;
  */
 public class AggregateResultWikiFormatter {
 
-	private final static Logger	log;
+	private final static List<TestRunner>	dlReasoners, elReasoners, qlReasoners, syntaxCheckers;
+	private final static Logger				log;
+	private final static TestRunResult		missingResult;
 
 	static {
 		log = Logger.getLogger( AggregateResultWikiFormatter.class.getCanonicalName() );
+
+		StringTemplateGroupLoader loader = new CommonGroupLoader(
+				"com/clarkparsia/owlwg/presentation/templates", new StringTemplateErrorListener() {
+
+					public void error(String msg, Throwable e) {
+						log.log( Level.SEVERE, msg, e );
+					}
+
+					public void warning(String msg) {
+						log.warning( msg );
+					}
+
+				} );
+		StringTemplateGroup.registerGroupLoader( loader );
+
+		dlReasoners = new ArrayList<TestRunner>();
+		dlReasoners.add( testRunner( URI.create( "http://clarkparsia.com/pellet" ), "Pellet" ) );
+		dlReasoners.add( testRunner( URI.create( "http://hermit-reasoner.com/" ), "HermiT" ) );
+		dlReasoners.add( testRunner( URI.create( "http://owl.cs.manchester.ac.uk/fact++/" ),
+				"FaCT++" ) );
+
+		elReasoners = new ArrayList<TestRunner>( dlReasoners );
+		elReasoners.add( testRunner( URI.create( "http://lat.inf.tu-dresden.de/systems/cel/" ),
+				"CEL" ) );
+
+		qlReasoners = new ArrayList<TestRunner>( dlReasoners );
+		qlReasoners
+				.add( testRunner( URI.create( "http://www.dis.uniroma1.it/~quonto/" ), "QuOnto" ) );
+
+		syntaxCheckers = new ArrayList<TestRunner>();
+		syntaxCheckers
+				.add( testRunner( URI.create( "http://owlapi.sourceforge.net/" ), "OWLAPIv2" ) );
+
+		Comparator<TestRunner> nameComparator = new Comparator<TestRunner>() {
+			public int compare(TestRunner arg0, TestRunner arg1) {
+				return arg0.getName().compareToIgnoreCase( arg1.getName() );
+			}
+
+		};
+
+		Collections.sort( dlReasoners, nameComparator );
+		Collections.sort( elReasoners, nameComparator );
+		Collections.sort( qlReasoners, nameComparator );
+		Collections.sort( syntaxCheckers, nameComparator );
+
+		missingResult = new TestRunResult() {
+
+			public RunTestType getTestType() {
+				return null;
+			}
+
+			public TestRunner getTestRunner() {
+				return null;
+			}
+
+			public TestCase getTestCase() {
+				return null;
+			}
+
+			public RunResultType getResultType() {
+				return null;
+			}
+
+			public String getDetails() {
+				return null;
+			}
+
+			public void accept(TestRunResultVisitor visitor) {
+			}
+		};
 	}
 
-	/**
-	 * @param args
-	 */
+	private static TestRunResult find(Collection<TestRunResult> results, TestCase test,
+			TestRunner runner, RunTestType type) {
+		for( TestRunResult r : results ) {
+			if( r.getTestCase().equals( test ) && r.getTestRunner().equals( runner )
+					&& r.getTestType().equals( type ) )
+				return r;
+		}
+		return null;
+	}
+
+	private static TestRunResult find(Collection<TestRunResult> results, TestCase test,
+			TestRunner runner, SyntaxConstraint constraint) {
+		for( TestRunResult r : results ) {
+			if( r.getTestCase().equals( test ) && r.getTestRunner().equals( runner )
+					&& r.getTestType().equals( RunTestType.SYNTAX_CONSTRAINT ) ) {
+				final SyntaxConstraintRun scr = (SyntaxConstraintRun) r;
+				if( scr.getConstraint().equals( constraint ) )
+					return r;
+			}
+		}
+		return null;
+	}
+
 	public static void main(String[] args) {
 
 		if( args.length < 2 )
 			throw new IllegalArgumentException();
 
 		final OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
+		final StringTemplateGroup stg = StringTemplateGroup.loadGroup( "result-summary-wiki" );
+		final StringTemplate template = stg.getInstanceOf( "result-summary" );
 
 		try {
 			/*
@@ -114,197 +217,173 @@ public class AggregateResultWikiFormatter {
 			for( TestRunResult r : results )
 				caseToResult.get( r.getTestCase() ).add( r );
 
-			StringBuffer out = new StringBuffer();
-			out.append( "= Test Results Summary =\n\n" );
-
-			/* Cases by status */
-			Map<Status, Collection<TestCase>> statusToCase = indexByStatus( cases );
-
-			/* General info about report */
+			/*
+			 * General info about report
+			 */
 			{
 				SimpleDateFormat df = new SimpleDateFormat( "yyyy-MM-dd'T'HH:mmZ" );
-				out.append( format( "Produced: %s\n", df.format( new Date() ) ) );
+				template.setAttribute( "timestamp", df.format( new Date() ) );
 			}
 
-			out.append( "\n== By Status ==\n\n" );
-
-			Status[] statuses = new Status[Status.values().length + 1];
-			System.arraycopy( Status.values(), 0, statuses, 0, Status.values().length );
-			statuses[statuses.length - 1] = null;
-			for( Status status : statuses ) {
-				if( Status.REJECTED.equals( status ) )
-					continue;
-
-				out.append( format( "\n=== %s ===\n\n", (status == null)
-					? "NO STATUS"
-					: status ) );
-
-				Collection<TestCase> sCases = statusToCase.get( status );
-				List<TestRunResult> sResults = new ArrayList<TestRunResult>();
-				for( TestCase c : sCases )
-					sResults.addAll( caseToResult.get( c ) );
-
-				Collection<TestRunner> reasoningRunners = collectReasoningRunners( sResults );
-
-				out.append( "\n==== Reasoning Tests ====\n\n" );
-
-				out.append( "{| border=\"1\"\n|-\n!Test\n!Type\n" );
-
-				for( TestRunner r : reasoningRunners )
-					out.append( format( "!%s\n", r.getURI() ) );
-
-				for( TestCase c : statusToCase.get( status ) ) {
-					final List<TestRunResult> cResults = caseToResult.get( c );
-					Set<RunTestType> testTypes = possibleReasoningRunTypes( c );
-					out
-							.append( testTypes.size() > 1
-								? format( "|-\n|rowspan=\"%d\"|%s\n", testTypes.size(),
-										caseToTableCell( c ) )
-								: format( "|-\n|%s\n", caseToTableCell( c ) ) );
-
-					boolean firstRow = true;
-					for( RunTestType type : testTypes ) {
-						if( !firstRow )
-							out.append( "|-\n" );
-						else
-							firstRow = false;
-
-						out.append( format( "%s\n", testTypeToTableCell( type ) ) );
-
-						for( TestRunner runner : reasoningRunners ) {
-							boolean match = false;
-							for( TestRunResult r : cResults ) {
-								if( r.getTestType().equals( type )
-										&& r.getTestRunner().equals( runner ) ) {
-									out.append( format( "%s\n", resultToTableCell( r ) ) );
-									match = true;
-									break;
-								}
-							}
-							if( !match )
-								out.append( "|\n" );
+			/*
+			 * DL reasoners
+			 */
+			{
+				template.setAttribute( "dl_reasoners", dlReasoners );
+				List<Object> dlResults = new ArrayList<Object>();
+				for( final TestCase c : match( and( DL, or( APPROVED, PROPOSED ) ), cases ) ) {
+					List<RunTestType> testTypes = new ArrayList<RunTestType>(
+							possibleReasoningRunTypes( c ) );
+					Collections.sort( testTypes );
+					List<TestRunResult> caseRes = caseToResult.get( c );
+					final List<Object> byTypeList = new ArrayList<Object>();
+					for( final RunTestType t : testTypes ) {
+						final List<TestRunResult> ctRes = new ArrayList<TestRunResult>();
+						for( TestRunner runner : dlReasoners ) {
+							TestRunResult trr = find( caseRes, c, runner, t );
+							if( trr == null )
+								trr = missingResult;
+							ctRes.add( trr );
 						}
-					}
-				}
-				out.append( "|}\n" );
-
-				Collection<TestRunner> constraintRunners = collectSyntaxConstraintRunners( sResults );
-
-				out.append( "\n==== Syntax Tests ====\n\n" );
-				out.append( "{| border=\"1\"\n|-\n!Test\n!Type\n" );
-
-				for( TestRunner r : constraintRunners )
-					out.append( format( "!%s\n", r.getURI() ) );
-
-				for( TestCase c : statusToCase.get( status ) ) {
-					final List<TestRunResult> cResults = caseToResult.get( c );
-					Set<SyntaxConstraint> testTypes = possibleSyntaxConstraintTests( c );
-					out
-							.append( testTypes.size() > 1
-								? format( "|-\n|rowspan=\"%d\"|%s\n", testTypes.size(),
-										caseToTableCell( c ) )
-								: format( "|-\n|%s\n", caseToTableCell( c ) ) );
-
-					boolean firstRow = true;
-					for( SyntaxConstraint constraint : testTypes ) {
-						if( !firstRow )
-							out.append( "|-\n" );
-						else
-							firstRow = false;
-
-						out.append( format( "%s\n", constraintToTableCell( c, constraint ) ) );
-
-						for( TestRunner runner : constraintRunners ) {
-							boolean match = false;
-							for( TestRunResult r : cResults ) {
-								if( r.getTestType().equals( RunTestType.SYNTAX_CONSTRAINT )
-										&& r.getTestRunner().equals( runner ) ) {
-									if( r instanceof SyntaxConstraintRun ) {
-										final SyntaxConstraintRun scr = (SyntaxConstraintRun) r;
-										if( constraint.equals( scr.getConstraint() ) ) {
-											out.append( format( "%s\n", resultToTableCell( r ) ) );
-											match = true;
-											break;
-										}
-									}
-									else
-										throw new IllegalStateException();
-								}
+						Object o = new Object() {
+							public List<TestRunResult> getResults() {
+								return ctRes;
 							}
-							if( !match )
-								out.append( "|\n" );
-						}
-					}
-				}
-				out.append( "|}\n" );
 
+							public RunTestType getType() {
+								return t;
+							}
+						};
+						byTypeList.add( o );
+					}
+
+					dlResults.add( new Object() {
+						public final List<Object>	byType		= byTypeList;
+						public final TestCase		testCase	= c;
+					} );
+				}
+				template.setAttribute( "dl_results", dlResults );
 			}
 
-			System.out.println( out.toString() );
+			/*
+			 * EL Reasoners
+			 */
+			{
+				template.setAttribute( "el_reasoners", elReasoners );
+				List<Object> elResults = new ArrayList<Object>();
+				for( final TestCase c : match( and( EL, or( APPROVED, PROPOSED ) ), cases ) ) {
+					List<RunTestType> testTypes = new ArrayList<RunTestType>(
+							possibleReasoningRunTypes( c ) );
+					Collections.sort( testTypes );
+					List<TestRunResult> caseRes = caseToResult.get( c );
+					final List<Object> byTypeList = new ArrayList<Object>();
+					for( final RunTestType t : testTypes ) {
+						final List<TestRunResult> ctRes = new ArrayList<TestRunResult>();
+						for( TestRunner runner : elReasoners ) {
+							TestRunResult trr = find( caseRes, c, runner, t );
+							if( trr == null )
+								trr = missingResult;
+							ctRes.add( trr );
+						}
+						Object o = new Object() {
+							public List<TestRunResult> getResults() {
+								return ctRes;
+							}
+
+							public RunTestType getType() {
+								return t;
+							}
+						};
+						byTypeList.add( o );
+					}
+
+					elResults.add( new Object() {
+						public final List<Object>	byType		= byTypeList;
+						public final TestCase		testCase	= c;
+					} );
+				}
+				template.setAttribute( "el_results", elResults );
+			}
+
+			/*
+			 * QL Reasoners
+			 */
+			{
+				template.setAttribute( "ql_reasoners", qlReasoners );
+				List<Object> elResults = new ArrayList<Object>();
+				for( final TestCase c : match( and( QL, or( APPROVED, PROPOSED ) ), cases ) ) {
+					List<RunTestType> testTypes = new ArrayList<RunTestType>(
+							possibleReasoningRunTypes( c ) );
+					Collections.sort( testTypes );
+					List<TestRunResult> caseRes = caseToResult.get( c );
+					final List<Object> byTypeList = new ArrayList<Object>();
+					for( final RunTestType t : testTypes ) {
+						final List<TestRunResult> ctRes = new ArrayList<TestRunResult>();
+						for( TestRunner runner : qlReasoners ) {
+							TestRunResult trr = find( caseRes, c, runner, t );
+							if( trr == null )
+								trr = missingResult;
+							ctRes.add( trr );
+						}
+						Object o = new Object() {
+							public List<TestRunResult> getResults() {
+								return ctRes;
+							}
+
+							public RunTestType getType() {
+								return t;
+							}
+						};
+						byTypeList.add( o );
+					}
+
+					elResults.add( new Object() {
+						public final List<Object>	byType		= byTypeList;
+						public final TestCase		testCase	= c;
+					} );
+				}
+				template.setAttribute( "ql_results", elResults );
+			}
+			
+			/*
+			 * Syntax checkers
+			 */
+			{
+				template.setAttribute( "syntax_checkers", syntaxCheckers );
+				List<Object> syntaxResults = new ArrayList<Object>();
+				for( final TestCase c : match( or( APPROVED, PROPOSED ), cases ) ) {
+					List<SyntaxConstraint> constraints = new ArrayList<SyntaxConstraint>(
+							possibleSyntaxConstraintTests( c ) );
+					Collections.sort( constraints );
+					List<TestRunResult> caseRes = caseToResult.get( c );
+					final List<Object> byConstraintList = new ArrayList<Object>();
+					for( final SyntaxConstraint con : constraints ) {
+						final List<TestRunResult> ctRes = new ArrayList<TestRunResult>();
+						for( TestRunner runner : syntaxCheckers ) {
+							ctRes.add( find( caseRes, c, runner, con ) );
+						}
+						Object o = new Object() {
+							public final SyntaxConstraint		constraint	= con;
+							public final List<TestRunResult>	results		= ctRes;
+							public final boolean				satisfied	= c
+																					.getSatisfiedConstraints()
+																					.contains( con );
+						};
+						byConstraintList.add( o );
+					}
+
+					syntaxResults.add( new Object() {
+						public final List<Object>	byConstraint	= byConstraintList;
+						public final TestCase		testCase		= c;
+					} );
+				}
+				template.setAttribute( "syntax_results", syntaxResults );
+			}
+
+			System.out.println( template.toString() );
 
 		} catch( OWLOntologyCreationException e ) {
 			log.log( Level.SEVERE, "Ontology creation exception caught.", e );
 		}
-	}
-
-	private static String testTypeToTableCell(RunTestType t) {
-		String ret;
-		switch ( t ) {
-		case CONSISTENCY:
-			ret = "|Consistency";
-			break;
-		case INCONSISTENCY:
-			ret = "|Inconsistency";
-			break;
-		case POSITIVE_ENTAILMENT:
-			ret = "|Positive Entailment";
-			break;
-		case NEGATIVE_ENTAILMENT:
-			ret = "|Negative Entailment";
-			break;
-		case SYNTAX_TRANSLATION:
-			ret = "|Translation";
-			break;
-		case SYNTAX_CONSTRAINT:
-		default:
-			throw new IllegalStateException();
-		}
-		return ret;
-	}
-
-	private static String constraintToTableCell(TestCase t, SyntaxConstraint c) {
-		String ret = format( "|%s%s", t.getSatisfiedConstraints().contains( c )
-			? ""
-			: t.getUnsatisfiedConstraints().contains( c )
-				? "!"
-				: "?", c );
-		return ret;
-	}
-
-	private static String resultToTableCell(TestRunResult r) {
-		String ret;
-		switch ( r.getResultType() ) {
-		case FAILING:
-			ret = "|style=\"background:red; color:white\"|Fail";
-			break;
-		case INCOMPLETE:
-			String details = r.getDetails();
-			if( details == null )
-				ret = "|Incomplete";
-			else
-				ret = format( "|<span title=\"%s\">Incomplete</span>", details.replace( "\"",
-						"&quot;" ).replace( ">", "&gt;" ).replace( "<", "&gt;" ) );
-			break;
-		case PASSING:
-			ret = "|style=\"background:green; color:white\"|Pass";
-			break;
-		default:
-			throw new IllegalStateException();
-		}
-		return ret;
-	}
-
-	private static String caseToTableCell(TestCase c) {
-		return format( "[%s %s]", c.getURI(), c.getIdentifier() );
 	}
 }

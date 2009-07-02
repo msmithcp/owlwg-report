@@ -1,0 +1,136 @@
+group case-summary-wiki;
+
+case-summary(
+ timestamp,
+ total,
+ approved,
+ proposed,
+ rejected,
+ nostatus,
+ consistency,
+ inconsistency,
+ positive_entailment,
+ negative_entailment,
+ consistency_approved,
+ consistency_proposed,
+ consistency_rejected,
+ consistency_nostatus,
+ inconsistency_approved,
+ inconsistency_proposed,
+ inconsistency_rejected,
+ inconsistency_nostatus,
+ positive_entailment_approved,
+ positive_entailment_proposed,
+ positive_entailment_rejected,
+ positive_entailment_nostatus,
+ negative_entailment_approved,
+ negative_entailment_proposed,
+ negative_entailment_rejected,
+ negative_entailment_nostatus,
+ dl,el,ql,rl,
+ dl_approved,
+ dl_proposed,
+ dl_rejected,
+ dl_nostatus,
+ el_approved,
+ el_proposed,
+ el_rejected,
+ el_nostatus,
+ ql_approved,
+ ql_proposed,
+ ql_rejected,
+ ql_nostatus,
+ rl_approved,
+ rl_proposed,
+ rl_rejected,
+ rl_nostatus
+ ) ::= <<
+
+= Test Case Summary =
+
+Produced: <timestamp>
+
+== By Status ==
+
+{| border="1"
+|-
+!Status!!Count
+|-
+|Approved||<approved>
+|-
+|Proposed||<proposed>
+|-
+|No Status||<nostatus>
+|-
+|Total||<total>
+|}
+
+== By Type and Status ==
+
+{| border="1"
+|-
+! !! Approved !! Proposed !! No Status !! Total
+|-
+! Consistency
+| <consistency_approved>
+| <consistency_proposed>
+| <consistency_nostatus>
+| <consistency>
+|-
+! Inconsistency
+| <inconsistency_approved>
+| <inconsistency_proposed>
+| <inconsistency_nostatus>
+| <inconsistency>
+|-
+! Positive Entailment
+| <positive_entailment_approved>
+| <positive_entailment_proposed>
+| <positive_entailment_nostatus>
+| <positive_entailment>
+|-
+! Negative Entailment
+| <negative_entailment_approved>
+| <negative_entailment_proposed>
+| <negative_entailment_nostatus>
+| <negative_entailment>
+|}
+
+== By Syntax Constraint and Status ==
+
+{| border="1"
+|-
+! !! Approved !! Proposed !! No Status !! Total
+|-
+! None (Full)
+| <approved>
+| <proposed>
+| <nostatus>
+| <total>
+|-
+! DL
+| <dl_approved>
+| <dl_proposed>
+| <dl_nostatus>
+| <dl>
+|-
+! EL
+| <el_approved>
+| <el_proposed>
+| <el_nostatus>
+| <el>
+|-
+! QL
+| <ql_approved>
+| <ql_proposed>
+| <ql_nostatus>
+| <ql>
+|-
+! RL
+| <rl_approved>
+| <rl_proposed>
+| <rl_nostatus>
+| <rl>
+|}
+
+>>

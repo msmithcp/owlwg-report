@@ -1,0 +1,99 @@
+group result-summary-wiki;
+
+result-summary(
+  timestamp,
+  dl_reasoners,
+  dl_results,
+  el_reasoners,
+  el_results,
+  ql_reasoners,
+  ql_results,
+  syntax_checkers,
+  syntax_results
+  ) ::= <<
+
+= Test Result Summary =
+
+Produced: <timestamp>
+
+== Reasoning Tests ==
+
+=== OWL 2 DL Test Cases ===
+
+{|border="1"
+|-
+!Test!!Type!!<dl_reasoners:runner(r=it); separator=" !! ">
+<dl_results:reasoning_runs(results=it)>
+|}
+
+=== OWL 2 EL Test Cases ===
+
+{|border="1"
+|-
+!Test!!Type!!<el_reasoners:runner(r=it); separator=" !! ">
+<el_results:reasoning_runs(results=it)>
+|}
+
+=== OWL 2 QL Test Cases ===
+
+{|border="1"
+|-
+!Test!!Type!!<ql_reasoners:runner(r=it); separator=" !! ">
+<ql_results:reasoning_runs(results=it)>
+|}
+
+== Syntactic Tests ==
+
+=== OWL 2 Syntax Constraint Test Cases ===
+
+{|border="1"
+|-
+!Test!!Type!!<syntax_checkers:runner(r=it); separator=" !! ">
+<syntax_results:syntax_runs(results=it)>
+|}
+
+>>
+
+runner(r) ::= "[<r.URI> <r.name>]"
+
+reasoning_runs(results) ::= <<
+<first(results.byType):{|-<\n>|rowspan="<length(results.byType)>"|[<results.testCase.URI> <results.testCase.identifier>] (<({case_status_short_<results.testCase.status>})()>)<\n>|<({run_type_<it.type>})()><\n>|<it.results:result_cell(result=it); separator="\n|", null = "" >}>
+<rest(results.byType):{|-<\n>|<({run_type_<it.type>})()> <\n>|<it.results:result_cell(result=it); separator="\n|", null="" ><\n>}>
+>>
+
+syntax_runs(results) ::= <<
+<first(results.byConstraint):{|-<\n>|rowspan="<length(results.byConstraint)>"|[<results.testCase.URI> <results.testCase.identifier>] (<({case_status_short_<results.testCase.status>})()>)<\n>|<({syntax_<it.constraint>})(it.satisfied)><\n>|<it.results:result_cell(result=it); separator="\n|">}>
+<rest(results.byConstraint):{|-<\n>|<({syntax_<it.constraint>})(it.satisfied)> <\n>|<it.results:result_cell(result=it); separator="\n|"><\n>}>
+>>
+
+result_cell(result) ::= "<if(!result.resultType)><result_type_NONE()><else><({result_type_<result.resultType>})()><endif>"
+
+run_type_CONSISTENCY() ::= "Consistency"
+
+run_type_INCONSISTENCY() ::= "Inconsistency"
+
+run_type_NEGATIVE_ENTAILMENT() ::= "Negative Entailment"
+
+run_type_POSITIVE_ENTAILMENT() ::= "Positive Entailment"
+
+result_type_PASSING() ::= <<
+style="background:green; color:white"|Pass
+>>
+
+result_type_FAILING() ::= <<
+style="background:red; color:white"|Fail
+>>
+result_type_INCOMPLETE() ::= "Incomplete"
+
+result_type_NONE() ::= <<
+style="background:white; color:gray"|None Reported
+>>
+
+case_status_short_APPROVED() ::= "A"
+
+case_status_short_PROPOSED() ::= "P"
+
+syntax_DL(sat) ::= "<if(sat)>DL<else>!DL<endif>"
+syntax_EL(sat) ::= "<if(sat)>EL<else>!EL<endif>"
+syntax_QL(sat) ::= "<if(sat)>QL<else>!QL<endif>"
+syntax_RL(sat) ::= "<if(sat)>RL<else>!RL<endif>"

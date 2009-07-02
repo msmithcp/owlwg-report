@@ -1,27 +1,39 @@
 package com.clarkparsia.owlwg.presentation;
 
 import static com.clarkparsia.owlwg.Constants.TEST_ONTOLOGY_PHYSICAL_URI;
-import static java.lang.String.format;
+import static com.clarkparsia.owlwg.presentation.Utilities.match;
+import static com.clarkparsia.owlwg.testcase.filter.ConjunctionFilter.and;
+import static com.clarkparsia.owlwg.testcase.filter.SatisfiedSyntaxConstraintFilter.DL;
+import static com.clarkparsia.owlwg.testcase.filter.SatisfiedSyntaxConstraintFilter.EL;
+import static com.clarkparsia.owlwg.testcase.filter.SatisfiedSyntaxConstraintFilter.QL;
+import static com.clarkparsia.owlwg.testcase.filter.SatisfiedSyntaxConstraintFilter.RL;
+import static com.clarkparsia.owlwg.testcase.filter.StatusFilter.APPROVED;
+import static com.clarkparsia.owlwg.testcase.filter.StatusFilter.NOSTATUS;
+import static com.clarkparsia.owlwg.testcase.filter.StatusFilter.PROPOSED;
+import static com.clarkparsia.owlwg.testcase.filter.StatusFilter.REJECTED;
+import static com.clarkparsia.owlwg.testcase.filter.TestTypeFilter.CONSISTENCY;
+import static com.clarkparsia.owlwg.testcase.filter.TestTypeFilter.INCONSISTENCY;
+import static com.clarkparsia.owlwg.testcase.filter.TestTypeFilter.NEGATIVE_ENTAILMENT;
+import static com.clarkparsia.owlwg.testcase.filter.TestTypeFilter.POSITIVE_ENTAILMENT;
 
 import java.net.URI;
 import java.text.SimpleDateFormat;
-import java.util.Collection;
 import java.util.Date;
-import java.util.Map;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.antlr.stringtemplate.CommonGroupLoader;
+import org.antlr.stringtemplate.StringTemplate;
+import org.antlr.stringtemplate.StringTemplateErrorListener;
+import org.antlr.stringtemplate.StringTemplateGroup;
+import org.antlr.stringtemplate.StringTemplateGroupLoader;
 import org.semanticweb.owl.apibinding.OWLManager;
 import org.semanticweb.owl.model.OWLOntology;
 import org.semanticweb.owl.model.OWLOntologyCreationException;
 import org.semanticweb.owl.model.OWLOntologyManager;
 
 import com.clarkparsia.owlwg.TestCollection;
-import com.clarkparsia.owlwg.testcase.ConsistencyTest;
-import com.clarkparsia.owlwg.testcase.InconsistencyTest;
-import com.clarkparsia.owlwg.testcase.NegativeEntailmentTest;
-import com.clarkparsia.owlwg.testcase.PositiveEntailmentTest;
-import com.clarkparsia.owlwg.testcase.Status;
 import com.clarkparsia.owlwg.testcase.TestCase;
 
 /**
@@ -47,6 +59,20 @@ public class AggregateTestWikiFormatter {
 
 	static {
 		log = Logger.getLogger( AggregateTestWikiFormatter.class.getCanonicalName() );
+
+		StringTemplateGroupLoader loader = new CommonGroupLoader(
+				"com/clarkparsia/owlwg/presentation/templates", new StringTemplateErrorListener() {
+
+					public void error(String msg, Throwable e) {
+						log.log( Level.SEVERE, msg, e );
+					}
+
+					public void warning(String msg) {
+						log.warning( msg );
+					}
+
+				} );
+		StringTemplateGroup.registerGroupLoader( loader );
 	}
 
 	/**
@@ -56,6 +82,9 @@ public class AggregateTestWikiFormatter {
 
 		if( args.length != 1 )
 			throw new IllegalArgumentException();
+
+		final StringTemplateGroup stg = StringTemplateGroup.loadGroup( "case-summary-wiki" );
+		final StringTemplate template = stg.getInstanceOf( "case-summary" );
 
 		final OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
 
@@ -68,85 +97,101 @@ public class AggregateTestWikiFormatter {
 
 			OWLOntology casesOntology = manager.loadOntologyFromPhysicalURI( URI.create( args[0] ) );
 
-			TestCollection cases = new TestCollection( casesOntology );
-
-			final int n = cases.size();
-
-			Map<Status, Collection<TestCase>> byStatus = Utilities.indexByStatus( cases );
-
-			StringBuffer out = new StringBuffer();
-			out.append( "= Test Case Summary =\n\n" );
+			TestCollection testCollection = new TestCollection( casesOntology );
+			List<TestCase> cases = testCollection.asList();
+			testCollection = null;
 
 			/* General info about report */
 			{
 				SimpleDateFormat df = new SimpleDateFormat( "yyyy-MM-dd'T'HH:mmZ" );
-				out.append( format( "Produced: %s\n", df.format( new Date() ) ) );
+				template.setAttribute( "timestamp", df.format( new Date() ) );
+
+				template.setAttribute( "total", cases.size() );
 			}
 
 			/* Summary by status */
 			{
-				out.append( "\n== By Status ==\n\n" );
-				out.append( "{| border=\"1\"\n|-\n!Status!!Count\n" );
-				for( Status s : Status.values() )
-					out.append( format( "|-\n|%s||%d\n", s, byStatus.get( s ).size() ) );
-				out.append( format( "|-\n|NO STATUS||%d\n", byStatus.get( null ).size() ) );
-				out.append( format( "|-\n|TOTAL||%d\n", n ) );
-
-				out.append( "|}\n" );
+				template.setAttribute( "approved", match( APPROVED, cases ).size() );
+				template.setAttribute( "nostatus", match( NOSTATUS, cases ).size() );
+				template.setAttribute( "proposed", match( PROPOSED, cases ).size() );
+				template.setAttribute( "rejected", match( REJECTED, cases ).size() );
 			}
 
 			/* Summary by type and status */
 			{
-				Status[] statuses = new Status[Status.values().length + 1];
-				System.arraycopy( Status.values(), 0, statuses, 0, statuses.length - 1 );
-				statuses[statuses.length - 1] = null;
+				template.setAttribute( "consistency", match( CONSISTENCY, cases ).size() );
+				template.setAttribute( "inconsistency", match( INCONSISTENCY, cases ).size() );
+				template.setAttribute( "positive_entailment", match( POSITIVE_ENTAILMENT, cases )
+						.size() );
+				template.setAttribute( "negative_entailment", match( NEGATIVE_ENTAILMENT, cases )
+						.size() );
 
-				out.append( "\n== By type and status ==\n\n" );
-				out.append( "{| border=\"1\"\n|-\n! " );
-				for( Status s : Status.values() )
-					out.append( format( "!!%s", s ) );
-				out.append( "!!NO STATUS\n" );
+				template.setAttribute( "consistency_approved", match( and( CONSISTENCY, APPROVED ),
+						cases ).size() );
+				template.setAttribute( "consistency_proposed", match( and( CONSISTENCY, PROPOSED ),
+						cases ).size() );
+				template.setAttribute( "consistency_rejected", match( and( CONSISTENCY, REJECTED ),
+						cases ).size() );
+				template.setAttribute( "consistency_nostatus", match( and( CONSISTENCY, NOSTATUS ),
+						cases ).size() );
 
-				out.append( "|-\n!Consistency\n" );
-				for( Status s : statuses ) {
-					int i = 0;
-					for( TestCase c : byStatus.get( s ) )
-						if( c instanceof ConsistencyTest )
-							i++;
-					out.append( format( "|%d\n", i ) );
-				}
+				template.setAttribute( "inconsistency_approved", match(
+						and( INCONSISTENCY, APPROVED ), cases ).size() );
+				template.setAttribute( "inconsistency_proposed", match(
+						and( INCONSISTENCY, PROPOSED ), cases ).size() );
+				template.setAttribute( "inconsistency_rejected", match(
+						and( INCONSISTENCY, REJECTED ), cases ).size() );
+				template.setAttribute( "inconsistency_nostatus", match(
+						and( INCONSISTENCY, NOSTATUS ), cases ).size() );
 
-				out.append( "|-\n!Inconsistency\n" );
-				for( Status s : statuses ) {
-					int i = 0;
-					for( TestCase c : byStatus.get( s ) )
-						if( c instanceof InconsistencyTest )
-							i++;
-					out.append( format( "|%d\n", i ) );
-				}
+				template.setAttribute( "positive_entailment_approved", match(
+						and( POSITIVE_ENTAILMENT, APPROVED ), cases ).size() );
+				template.setAttribute( "positive_entailment_proposed", match(
+						and( POSITIVE_ENTAILMENT, PROPOSED ), cases ).size() );
+				template.setAttribute( "positive_entailment_rejected", match(
+						and( POSITIVE_ENTAILMENT, REJECTED ), cases ).size() );
+				template.setAttribute( "positive_entailment_nostatus", match(
+						and( POSITIVE_ENTAILMENT, NOSTATUS ), cases ).size() );
 
-				out.append( "|-\n!Positive Entailment\n" );
-				for( Status s : statuses ) {
-					int i = 0;
-					for( TestCase c : byStatus.get( s ) )
-						if( c instanceof PositiveEntailmentTest )
-							i++;
-					out.append( format( "|%d\n", i ) );
-				}
-
-				out.append( "|-\n!Negative Entailment\n" );
-				for( Status s : statuses ) {
-					int i = 0;
-					for( TestCase c : byStatus.get( s ) )
-						if( c instanceof NegativeEntailmentTest )
-							i++;
-					out.append( format( "|%d\n", i ) );
-				}
-
-				out.append( "|}\n" );
+				template.setAttribute( "negative_entailment_approved", match(
+						and( NEGATIVE_ENTAILMENT, APPROVED ), cases ).size() );
+				template.setAttribute( "negative_entailment_proposed", match(
+						and( NEGATIVE_ENTAILMENT, PROPOSED ), cases ).size() );
+				template.setAttribute( "negative_entailment_rejected", match(
+						and( NEGATIVE_ENTAILMENT, REJECTED ), cases ).size() );
+				template.setAttribute( "negative_entailment_nostatus", match(
+						and( NEGATIVE_ENTAILMENT, NOSTATUS ), cases ).size() );
 			}
 
-			System.out.println( out );
+			/* Summary by profile and status */
+			{
+				template.setAttribute( "dl", match( DL, cases ).size() );
+				template.setAttribute( "el", match( EL, cases ).size() );
+				template.setAttribute( "ql", match( QL, cases ).size() );
+				template.setAttribute( "rl", match( RL, cases ).size() );
+
+				template.setAttribute( "dl_approved", match( and( DL, APPROVED ), cases ).size() );
+				template.setAttribute( "dl_proposed", match( and( DL, PROPOSED ), cases ).size() );
+				template.setAttribute( "dl_rejected", match( and( DL, REJECTED ), cases ).size() );
+				template.setAttribute( "dl_nostatus", match( and( DL, NOSTATUS ), cases ).size() );
+
+				template.setAttribute( "el_approved", match( and( EL, APPROVED ), cases ).size() );
+				template.setAttribute( "el_proposed", match( and( EL, PROPOSED ), cases ).size() );
+				template.setAttribute( "el_rejected", match( and( EL, REJECTED ), cases ).size() );
+				template.setAttribute( "el_nostatus", match( and( EL, NOSTATUS ), cases ).size() );
+
+				template.setAttribute( "ql_approved", match( and( QL, APPROVED ), cases ).size() );
+				template.setAttribute( "ql_proposed", match( and( QL, PROPOSED ), cases ).size() );
+				template.setAttribute( "ql_rejected", match( and( QL, REJECTED ), cases ).size() );
+				template.setAttribute( "ql_nostatus", match( and( QL, NOSTATUS ), cases ).size() );
+
+				template.setAttribute( "rl_approved", match( and( RL, APPROVED ), cases ).size() );
+				template.setAttribute( "rl_proposed", match( and( RL, PROPOSED ), cases ).size() );
+				template.setAttribute( "rl_rejected", match( and( RL, REJECTED ), cases ).size() );
+				template.setAttribute( "rl_nostatus", match( and( RL, NOSTATUS ), cases ).size() );
+			}
+
+			System.out.print( template.toString() );
 
 		} catch( OWLOntologyCreationException e ) {
 			log.log( Level.SEVERE, "Ontology creation exception caught.", e );
