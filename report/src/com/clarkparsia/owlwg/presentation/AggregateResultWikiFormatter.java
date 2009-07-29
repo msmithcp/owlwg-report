@@ -7,11 +7,11 @@ import static com.clarkparsia.owlwg.presentation.Utilities.possibleReasoningRunT
 import static com.clarkparsia.owlwg.presentation.Utilities.possibleSyntaxConstraintTests;
 import static com.clarkparsia.owlwg.runner.ReadOnlyTestRunner.testRunner;
 import static com.clarkparsia.owlwg.testcase.filter.ConjunctionFilter.and;
-import static com.clarkparsia.owlwg.testcase.filter.DisjunctionFilter.or;
 import static com.clarkparsia.owlwg.testcase.filter.SatisfiedSyntaxConstraintFilter.DL;
 import static com.clarkparsia.owlwg.testcase.filter.SatisfiedSyntaxConstraintFilter.EL;
 import static com.clarkparsia.owlwg.testcase.filter.SatisfiedSyntaxConstraintFilter.QL;
 import static com.clarkparsia.owlwg.testcase.filter.StatusFilter.APPROVED;
+import static com.clarkparsia.owlwg.testcase.filter.StatusFilter.EXTRACREDIT;
 import static com.clarkparsia.owlwg.testcase.filter.StatusFilter.PROPOSED;
 
 import java.net.URI;
@@ -38,9 +38,11 @@ import org.semanticweb.owl.model.OWLOntologyCreationException;
 import org.semanticweb.owl.model.OWLOntologyManager;
 
 import com.clarkparsia.owlwg.TestCollection;
+import com.clarkparsia.owlwg.owlapi2.testcase.impl.OwlApi2TestCaseFactory;
 import com.clarkparsia.owlwg.runner.TestRunner;
 import com.clarkparsia.owlwg.testcase.SyntaxConstraint;
 import com.clarkparsia.owlwg.testcase.TestCase;
+import com.clarkparsia.owlwg.testcase.filter.StatusFilter;
 import com.clarkparsia.owlwg.testrun.RunResultType;
 import com.clarkparsia.owlwg.testrun.RunTestType;
 import com.clarkparsia.owlwg.testrun.SyntaxConstraintRun;
@@ -193,14 +195,15 @@ public class AggregateResultWikiFormatter {
 						.add( manager.loadOntologyFromPhysicalURI( URI.create( args[i] ) ) );
 			}
 
-			TestCollection caseCol = new TestCollection( casesOntology );
-			Map<String, TestCase> caseMap = new HashMap<String, TestCase>();
-			for( TestCase c : caseCol )
+			TestCollection<OWLOntology> caseCol = new TestCollection<OWLOntology>(
+					new OwlApi2TestCaseFactory(), casesOntology );
+			Map<String, TestCase<OWLOntology>> caseMap = new HashMap<String, TestCase<OWLOntology>>();
+			for( TestCase<OWLOntology> c : caseCol )
 				caseMap.put( c.getIdentifier(), c );
 
-			List<TestCase> cases = caseCol.asList();
-			Collections.sort( cases, new Comparator<TestCase>() {
-				public int compare(TestCase o1, TestCase o2) {
+			List<TestCase<OWLOntology>> cases = caseCol.asList();
+			Collections.sort( cases, new Comparator<TestCase<OWLOntology>>() {
+				public int compare(TestCase<OWLOntology> o1, TestCase<OWLOntology> o2) {
 					return o1.getIdentifier().compareTo( o2.getIdentifier() );
 				}
 			} );
@@ -211,8 +214,8 @@ public class AggregateResultWikiFormatter {
 				results.addAll( parser.getResults( o, caseMap ) );
 
 			/* Results by test case */
-			Map<TestCase, List<TestRunResult>> caseToResult = new HashMap<TestCase, List<TestRunResult>>();
-			for( TestCase t : cases )
+			Map<TestCase<OWLOntology>, List<TestRunResult>> caseToResult = new HashMap<TestCase<OWLOntology>, List<TestRunResult>>();
+			for( TestCase<OWLOntology> t : cases )
 				caseToResult.put( t, new ArrayList<TestRunResult>() );
 			for( TestRunResult r : results )
 				caseToResult.get( r.getTestCase() ).add( r );
@@ -228,10 +231,13 @@ public class AggregateResultWikiFormatter {
 			/*
 			 * DL reasoners
 			 */
-			{
-				template.setAttribute( "dl_reasoners", dlReasoners );
+			template.setAttribute( "dl_reasoners", dlReasoners );
+			for( Object[] pair : new Object[][] {
+					new Object[] { APPROVED, "approved" }, new Object[] { PROPOSED, "proposed" },
+					new Object[] { EXTRACREDIT, "extracredit" }, } ) {
+				final StatusFilter f = (StatusFilter) pair[0];
 				List<Object> dlResults = new ArrayList<Object>();
-				for( final TestCase c : match( and( DL, or( APPROVED, PROPOSED ) ), cases ) ) {
+				for( final TestCase c : match( and( DL, f ), cases ) ) {
 					List<RunTestType> testTypes = new ArrayList<RunTestType>(
 							possibleReasoningRunTypes( c ) );
 					Collections.sort( testTypes );
@@ -262,16 +268,19 @@ public class AggregateResultWikiFormatter {
 						public final TestCase		testCase	= c;
 					} );
 				}
-				template.setAttribute( "dl_results", dlResults );
+				template.setAttribute( "dl_results_" + pair[1], dlResults );
 			}
 
 			/*
 			 * EL Reasoners
 			 */
-			{
-				template.setAttribute( "el_reasoners", elReasoners );
+			template.setAttribute( "el_reasoners", elReasoners );
+			for( Object[] pair : new Object[][] {
+					new Object[] { APPROVED, "approved" }, new Object[] { PROPOSED, "proposed" },
+					new Object[] { EXTRACREDIT, "extracredit" }, } ) {
+				final StatusFilter f = (StatusFilter) pair[0];
 				List<Object> elResults = new ArrayList<Object>();
-				for( final TestCase c : match( and( EL, or( APPROVED, PROPOSED ) ), cases ) ) {
+				for( final TestCase c : match( and( EL, f ), cases ) ) {
 					List<RunTestType> testTypes = new ArrayList<RunTestType>(
 							possibleReasoningRunTypes( c ) );
 					Collections.sort( testTypes );
@@ -302,16 +311,19 @@ public class AggregateResultWikiFormatter {
 						public final TestCase		testCase	= c;
 					} );
 				}
-				template.setAttribute( "el_results", elResults );
+				template.setAttribute( "el_results_" + pair[1], elResults );
 			}
 
 			/*
 			 * QL Reasoners
 			 */
-			{
-				template.setAttribute( "ql_reasoners", qlReasoners );
-				List<Object> elResults = new ArrayList<Object>();
-				for( final TestCase c : match( and( QL, or( APPROVED, PROPOSED ) ), cases ) ) {
+			template.setAttribute( "ql_reasoners", qlReasoners );
+			for( Object[] pair : new Object[][] {
+					new Object[] { APPROVED, "approved" }, new Object[] { PROPOSED, "proposed" },
+					new Object[] { EXTRACREDIT, "extracredit" }, } ) {
+				final StatusFilter f = (StatusFilter) pair[0];
+				List<Object> qlResults = new ArrayList<Object>();
+				for( final TestCase c : match( and( QL, f ), cases ) ) {
 					List<RunTestType> testTypes = new ArrayList<RunTestType>(
 							possibleReasoningRunTypes( c ) );
 					Collections.sort( testTypes );
@@ -337,21 +349,24 @@ public class AggregateResultWikiFormatter {
 						byTypeList.add( o );
 					}
 
-					elResults.add( new Object() {
+					qlResults.add( new Object() {
 						public final List<Object>	byType		= byTypeList;
 						public final TestCase		testCase	= c;
 					} );
 				}
-				template.setAttribute( "ql_results", elResults );
+				template.setAttribute( "ql_results_" + pair[1], qlResults );
 			}
-			
+
 			/*
 			 * Syntax checkers
 			 */
-			{
-				template.setAttribute( "syntax_checkers", syntaxCheckers );
+			template.setAttribute( "syntax_checkers", syntaxCheckers );
+			for( Object[] pair : new Object[][] {
+					new Object[] { APPROVED, "approved" }, new Object[] { PROPOSED, "proposed" },
+					new Object[] { EXTRACREDIT, "extracredit" }, } ) {
+				final StatusFilter f = (StatusFilter) pair[0];
 				List<Object> syntaxResults = new ArrayList<Object>();
-				for( final TestCase c : match( or( APPROVED, PROPOSED ), cases ) ) {
+				for( final TestCase c : match( f, cases ) ) {
 					List<SyntaxConstraint> constraints = new ArrayList<SyntaxConstraint>(
 							possibleSyntaxConstraintTests( c ) );
 					Collections.sort( constraints );
@@ -377,7 +392,7 @@ public class AggregateResultWikiFormatter {
 						public final TestCase		testCase		= c;
 					} );
 				}
-				template.setAttribute( "syntax_results", syntaxResults );
+				template.setAttribute( "syntax_results_" + pair[1], syntaxResults );
 			}
 
 			System.out.println( template.toString() );

@@ -8,6 +8,7 @@ import static com.clarkparsia.owlwg.testcase.filter.SatisfiedSyntaxConstraintFil
 import static com.clarkparsia.owlwg.testcase.filter.SatisfiedSyntaxConstraintFilter.QL;
 import static com.clarkparsia.owlwg.testcase.filter.SatisfiedSyntaxConstraintFilter.RL;
 import static com.clarkparsia.owlwg.testcase.filter.StatusFilter.APPROVED;
+import static com.clarkparsia.owlwg.testcase.filter.StatusFilter.EXTRACREDIT;
 import static com.clarkparsia.owlwg.testcase.filter.StatusFilter.NOSTATUS;
 import static com.clarkparsia.owlwg.testcase.filter.StatusFilter.PROPOSED;
 import static com.clarkparsia.owlwg.testcase.filter.StatusFilter.REJECTED;
@@ -34,7 +35,9 @@ import org.semanticweb.owl.model.OWLOntologyCreationException;
 import org.semanticweb.owl.model.OWLOntologyManager;
 
 import com.clarkparsia.owlwg.TestCollection;
+import com.clarkparsia.owlwg.owlapi2.testcase.impl.OwlApi2TestCaseFactory;
 import com.clarkparsia.owlwg.testcase.TestCase;
+import com.clarkparsia.owlwg.testcase.filter.NegationFilter;
 
 /**
  * <p>
@@ -97,8 +100,9 @@ public class AggregateTestWikiFormatter {
 
 			OWLOntology casesOntology = manager.loadOntologyFromPhysicalURI( URI.create( args[0] ) );
 
-			TestCollection testCollection = new TestCollection( casesOntology );
-			List<TestCase> cases = testCollection.asList();
+			TestCollection<OWLOntology> testCollection = new TestCollection<OWLOntology>(
+					new OwlApi2TestCaseFactory(), casesOntology );
+			List<TestCase<OWLOntology>> cases = testCollection.asList();
 			testCollection = null;
 
 			/* General info about report */
@@ -106,15 +110,16 @@ public class AggregateTestWikiFormatter {
 				SimpleDateFormat df = new SimpleDateFormat( "yyyy-MM-dd'T'HH:mmZ" );
 				template.setAttribute( "timestamp", df.format( new Date() ) );
 
-				template.setAttribute( "total", cases.size() );
+				template.setAttribute( "total", match( NegationFilter.not( REJECTED ), cases )
+						.size() );
 			}
 
 			/* Summary by status */
 			{
 				template.setAttribute( "approved", match( APPROVED, cases ).size() );
+				template.setAttribute( "extracredit", match( EXTRACREDIT, cases ).size() );
 				template.setAttribute( "nostatus", match( NOSTATUS, cases ).size() );
 				template.setAttribute( "proposed", match( PROPOSED, cases ).size() );
-				template.setAttribute( "rejected", match( REJECTED, cases ).size() );
 			}
 
 			/* Summary by type and status */
@@ -130,8 +135,8 @@ public class AggregateTestWikiFormatter {
 						cases ).size() );
 				template.setAttribute( "consistency_proposed", match( and( CONSISTENCY, PROPOSED ),
 						cases ).size() );
-				template.setAttribute( "consistency_rejected", match( and( CONSISTENCY, REJECTED ),
-						cases ).size() );
+				template.setAttribute( "consistency_extracredit", match(
+						and( CONSISTENCY, EXTRACREDIT ), cases ).size() );
 				template.setAttribute( "consistency_nostatus", match( and( CONSISTENCY, NOSTATUS ),
 						cases ).size() );
 
@@ -139,8 +144,8 @@ public class AggregateTestWikiFormatter {
 						and( INCONSISTENCY, APPROVED ), cases ).size() );
 				template.setAttribute( "inconsistency_proposed", match(
 						and( INCONSISTENCY, PROPOSED ), cases ).size() );
-				template.setAttribute( "inconsistency_rejected", match(
-						and( INCONSISTENCY, REJECTED ), cases ).size() );
+				template.setAttribute( "inconsistency_extracredit", match(
+						and( INCONSISTENCY, EXTRACREDIT ), cases ).size() );
 				template.setAttribute( "inconsistency_nostatus", match(
 						and( INCONSISTENCY, NOSTATUS ), cases ).size() );
 
@@ -148,8 +153,8 @@ public class AggregateTestWikiFormatter {
 						and( POSITIVE_ENTAILMENT, APPROVED ), cases ).size() );
 				template.setAttribute( "positive_entailment_proposed", match(
 						and( POSITIVE_ENTAILMENT, PROPOSED ), cases ).size() );
-				template.setAttribute( "positive_entailment_rejected", match(
-						and( POSITIVE_ENTAILMENT, REJECTED ), cases ).size() );
+				template.setAttribute( "positive_entailment_extracredit", match(
+						and( POSITIVE_ENTAILMENT, EXTRACREDIT ), cases ).size() );
 				template.setAttribute( "positive_entailment_nostatus", match(
 						and( POSITIVE_ENTAILMENT, NOSTATUS ), cases ).size() );
 
@@ -157,8 +162,8 @@ public class AggregateTestWikiFormatter {
 						and( NEGATIVE_ENTAILMENT, APPROVED ), cases ).size() );
 				template.setAttribute( "negative_entailment_proposed", match(
 						and( NEGATIVE_ENTAILMENT, PROPOSED ), cases ).size() );
-				template.setAttribute( "negative_entailment_rejected", match(
-						and( NEGATIVE_ENTAILMENT, REJECTED ), cases ).size() );
+				template.setAttribute( "negative_entailment_extracredit", match(
+						and( NEGATIVE_ENTAILMENT, EXTRACREDIT ), cases ).size() );
 				template.setAttribute( "negative_entailment_nostatus", match(
 						and( NEGATIVE_ENTAILMENT, NOSTATUS ), cases ).size() );
 			}
@@ -172,22 +177,26 @@ public class AggregateTestWikiFormatter {
 
 				template.setAttribute( "dl_approved", match( and( DL, APPROVED ), cases ).size() );
 				template.setAttribute( "dl_proposed", match( and( DL, PROPOSED ), cases ).size() );
-				template.setAttribute( "dl_rejected", match( and( DL, REJECTED ), cases ).size() );
+				template.setAttribute( "dl_extracredit", match( and( DL, EXTRACREDIT ), cases )
+						.size() );
 				template.setAttribute( "dl_nostatus", match( and( DL, NOSTATUS ), cases ).size() );
 
 				template.setAttribute( "el_approved", match( and( EL, APPROVED ), cases ).size() );
 				template.setAttribute( "el_proposed", match( and( EL, PROPOSED ), cases ).size() );
-				template.setAttribute( "el_rejected", match( and( EL, REJECTED ), cases ).size() );
+				template.setAttribute( "el_extracredit", match( and( EL, EXTRACREDIT ), cases )
+						.size() );
 				template.setAttribute( "el_nostatus", match( and( EL, NOSTATUS ), cases ).size() );
 
 				template.setAttribute( "ql_approved", match( and( QL, APPROVED ), cases ).size() );
 				template.setAttribute( "ql_proposed", match( and( QL, PROPOSED ), cases ).size() );
-				template.setAttribute( "ql_rejected", match( and( QL, REJECTED ), cases ).size() );
+				template.setAttribute( "ql_extracredit", match( and( QL, EXTRACREDIT ), cases )
+						.size() );
 				template.setAttribute( "ql_nostatus", match( and( QL, NOSTATUS ), cases ).size() );
 
 				template.setAttribute( "rl_approved", match( and( RL, APPROVED ), cases ).size() );
 				template.setAttribute( "rl_proposed", match( and( RL, PROPOSED ), cases ).size() );
-				template.setAttribute( "rl_rejected", match( and( RL, REJECTED ), cases ).size() );
+				template.setAttribute( "rl_extracredit", match( and( RL, EXTRACREDIT ), cases )
+						.size() );
 				template.setAttribute( "rl_nostatus", match( and( RL, NOSTATUS ), cases ).size() );
 			}
 

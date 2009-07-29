@@ -3,13 +3,21 @@ group result-summary-wiki;
 result-summary(
   timestamp,
   dl_reasoners,
-  dl_results,
+  dl_results_approved,
+  dl_results_proposed,
+  dl_results_extracredit,
   el_reasoners,
-  el_results,
+  el_results_approved,
+  el_results_proposed,
+  el_results_extracredit,
   ql_reasoners,
-  ql_results,
+  ql_results_approved,
+  ql_results_proposed,
+  ql_results_extracredit,
   syntax_checkers,
-  syntax_results
+  syntax_results_approved,
+  syntax_results_proposed,
+  syntax_results_extracredit
   ) ::= <<
 
 = Test Result Summary =
@@ -20,36 +28,108 @@ Produced: <timestamp>
 
 === OWL 2 DL Test Cases ===
 
+==== OWL 2 DL Approved Test Cases ====
+
 {|border="1"
 |-
 !Test!!Type!!<dl_reasoners:runner(r=it); separator=" !! ">
-<dl_results:reasoning_runs(results=it)>
+<dl_results_approved:reasoning_runs(results=it)>
+|}
+
+==== OWL 2 DL Extra Credit Test Cases ====
+
+{|border="1"
+|-
+!Test!!Type!!<dl_reasoners:runner(r=it); separator=" !! ">
+<dl_results_extracredit:reasoning_runs(results=it)>
+|}
+
+==== OWL 2 DL Proposed Test Cases ====
+
+{|border="1"
+|-
+!Test!!Type!!<dl_reasoners:runner(r=it); separator=" !! ">
+<dl_results_proposed:reasoning_runs(results=it)>
 |}
 
 === OWL 2 EL Test Cases ===
 
+==== OWL 2 EL Approved Test Cases ====
+
 {|border="1"
 |-
 !Test!!Type!!<el_reasoners:runner(r=it); separator=" !! ">
-<el_results:reasoning_runs(results=it)>
+<el_results_approved:reasoning_runs(results=it)>
+|}
+
+==== OWL 2 EL Extra Credit Test Cases ====
+
+{|border="1"
+|-
+!Test!!Type!!<el_reasoners:runner(r=it); separator=" !! ">
+<el_results_extracredit:reasoning_runs(results=it)>
+|}
+
+==== OWL 2 EL Proposed Test Cases ====
+
+{|border="1"
+|-
+!Test!!Type!!<el_reasoners:runner(r=it); separator=" !! ">
+<el_results_proposed:reasoning_runs(results=it)>
 |}
 
 === OWL 2 QL Test Cases ===
 
+==== OWL 2 QL Approved Test Cases ====
+
 {|border="1"
 |-
 !Test!!Type!!<ql_reasoners:runner(r=it); separator=" !! ">
-<ql_results:reasoning_runs(results=it)>
+<ql_results_approved:reasoning_runs(results=it)>
+|}
+
+==== OWL 2 QL Extra Credit Test Cases ====
+
+{|border="1"
+|-
+!Test!!Type!!<ql_reasoners:runner(r=it); separator=" !! ">
+<ql_results_extracredit:reasoning_runs(results=it)>
+|}
+
+==== OWL 2 QL Proposed Test Cases ====
+
+{|border="1"
+|-
+!Test!!Type!!<ql_reasoners:runner(r=it); separator=" !! ">
+<ql_results_proposed:reasoning_runs(results=it)>
 |}
 
 == Syntactic Tests ==
 
 === OWL 2 Syntax Constraint Test Cases ===
 
+==== OWL 2 Approved Syntax Constraint Test Cases ====
+
 {|border="1"
 |-
 !Test!!Type!!<syntax_checkers:runner(r=it); separator=" !! ">
-<syntax_results:syntax_runs(results=it)>
+<syntax_results_approved:syntax_runs(results=it)>
+|}
+
+==== OWL 2 Extra Credit Syntax Constraint Test Cases ====
+
+{|border="1"
+|-
+!Test!!Type!!<syntax_checkers:runner(r=it); separator=" !! ">
+<syntax_results_extracredit:syntax_runs(results=it)>
+|}
+
+==== OWL 2 Proposed Syntax Constraint Test Cases ====
+
+{|border="1"
+|-
+!Test!!Type!!<syntax_checkers:runner(r=it); separator=" !! ">
+<syntax_results_proposed:syntax_runs(results=it)>
 |}
 
 >>
@@ -57,12 +137,12 @@ Produced: <timestamp>
 runner(r) ::= "[<r.URI> <r.name>]"
 
 reasoning_runs(results) ::= <<
-<first(results.byType):{|-<\n>|rowspan="<length(results.byType)>"|[<results.testCase.URI> <results.testCase.identifier>] (<({case_status_short_<results.testCase.status>})()>)<\n>|<({run_type_<it.type>})()><\n>|<it.results:result_cell(result=it); separator="\n|", null = "" >}>
+<first(results.byType):{|-<\n>|rowspan="<length(results.byType)>"|[<results.testCase.URI> <results.testCase.identifier>]<\n>|<({run_type_<it.type>})()><\n>|<it.results:result_cell(result=it); separator="\n|", null = "" >}>
 <rest(results.byType):{|-<\n>|<({run_type_<it.type>})()> <\n>|<it.results:result_cell(result=it); separator="\n|", null="" ><\n>}>
 >>
 
 syntax_runs(results) ::= <<
-<first(results.byConstraint):{|-<\n>|rowspan="<length(results.byConstraint)>"|[<results.testCase.URI> <results.testCase.identifier>] (<({case_status_short_<results.testCase.status>})()>)<\n>|<({syntax_<it.constraint>})(it.satisfied)><\n>|<it.results:result_cell(result=it); separator="\n|">}>
+<first(results.byConstraint):{|-<\n>|rowspan="<length(results.byConstraint)>"|[<results.testCase.URI> <results.testCase.identifier>]<\n>|<({syntax_<it.constraint>})(it.satisfied)><\n>|<it.results:result_cell(result=it); separator="\n|">}>
 <rest(results.byConstraint):{|-<\n>|<({syntax_<it.constraint>})(it.satisfied)> <\n>|<it.results:result_cell(result=it); separator="\n|"><\n>}>
 >>
 

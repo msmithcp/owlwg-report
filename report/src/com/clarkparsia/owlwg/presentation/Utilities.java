@@ -90,38 +90,38 @@ public class Utilities {
 		return set;
 	}
 
-	public static Map<Status, Collection<TestCase>> indexByStatus(Iterable<TestCase> cases) {
-		Map<Status, Collection<TestCase>> byStatus = new HashMap<Status, Collection<TestCase>>();
+	public static <T> Map<Status, Collection<TestCase<T>>> indexByStatus(Iterable<TestCase<T>> cases) {
+		Map<Status, Collection<TestCase<T>>> byStatus = new HashMap<Status, Collection<TestCase<T>>>();
 		for( Status s : Status.values() ) {
-			byStatus.put( s, new ArrayList<TestCase>() );
+			byStatus.put( s, new ArrayList<TestCase<T>>() );
 		}
-		byStatus.put( null, new ArrayList<TestCase>() );
+		byStatus.put( null, new ArrayList<TestCase<T>>() );
 
-		for( TestCase c : cases ) {
+		for( TestCase<T> c : cases ) {
 			Status s = c.getStatus();
 			byStatus.get( s ).add( c );
 		}
 		return byStatus;
 	}
 
-	public static EnumSet<RunTestType> possibleReasoningRunTypes(TestCase c) {
+	public static <T> EnumSet<RunTestType> possibleReasoningRunTypes(TestCase<T> c) {
 		final EnumSet<RunTestType> set = EnumSet.noneOf( RunTestType.class );
-		c.accept( new TestCaseVisitor() {
+		c.accept( new TestCaseVisitor<T>() {
 
-			public void visit(ConsistencyTest testcase) {
+			public void visit(ConsistencyTest<T> testcase) {
 				set.add( RunTestType.CONSISTENCY );
 			}
 
-			public void visit(InconsistencyTest testcase) {
+			public void visit(InconsistencyTest<T> testcase) {
 				set.add( RunTestType.INCONSISTENCY );
 			}
 
-			public void visit(NegativeEntailmentTest testcase) {
+			public void visit(NegativeEntailmentTest<T> testcase) {
 				set.add( RunTestType.CONSISTENCY );
 				set.add( RunTestType.NEGATIVE_ENTAILMENT );
 			}
 
-			public void visit(PositiveEntailmentTest testcase) {
+			public void visit(PositiveEntailmentTest<T> testcase) {
 				set.add( RunTestType.CONSISTENCY );
 				set.add( RunTestType.POSITIVE_ENTAILMENT );
 			}
@@ -137,12 +137,12 @@ public class Utilities {
 			return EnumSet.of( SyntaxConstraint.DL );
 	}
 
-	public static List<TestCase> match(FilterCondition filter, Collection<TestCase> cases) {
-		final List<TestCase> ret = new ArrayList<TestCase>();
-		for( TestCase t : cases )
+	public static <T> List<TestCase<T>> match(FilterCondition filter, Collection<TestCase<T>> cases) {
+		final List<TestCase<T>> ret = new ArrayList<TestCase<T>>();
+		for( TestCase<T> t : cases )
 			if( filter.accepts( t ) )
 				ret.add( t );
-	
+
 		return ret;
 	}
 }
