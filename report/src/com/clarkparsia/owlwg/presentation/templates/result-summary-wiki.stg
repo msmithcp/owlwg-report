@@ -18,6 +18,10 @@ result-summary(
   rl_results_approved,
   rl_results_proposed,
   rl_results_extracredit,
+  rdf_reasoners,
+  rdf_results_approved,
+  rdf_results_proposed,
+  rdf_results_extracredit, 
   syntax_checkers,
   syntax_results_approved,
   syntax_results_proposed,
@@ -132,6 +136,32 @@ Produced: <timestamp>
 |-
 !Test!!Type!!<rl_reasoners:runner(r=it); separator=" !! ">
 <rl_results_proposed:reasoning_runs(results=it)>
+|}
+
+=== OWL 2 Direct-Semantics Test Cases ===
+
+==== OWL 2 Direct-Semantics Approved Test Cases ====
+
+{|border="1"
+|-
+!Test!!Type!!<rdf_reasoners:runner(r=it); separator=" !! ">
+<rdf_results_approved:reasoning_runs(results=it)>
+|}
+
+==== OWL 2 Direct-Semantics Extra Credit Test Cases ====
+
+{|border="1"
+|-
+!Test!!Type!!<rdf_reasoners:runner(r=it); separator=" !! ">
+<rdf_results_extracredit:reasoning_runs(results=it)>
+|}
+
+==== OWL 2 Direct-Semantics Proposed Test Cases ====
+
+{|border="1"
+|-
+!Test!!Type!!<rdf_reasoners:runner(r=it); separator=" !! ">
+<rdf_results_proposed:reasoning_runs(results=it)>
 |}
 
 == Syntactic Tests ==

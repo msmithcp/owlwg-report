@@ -14,6 +14,8 @@ import static com.clarkparsia.owlwg.testcase.filter.SatisfiedSyntaxConstraintFil
 import static com.clarkparsia.owlwg.testcase.filter.StatusFilter.APPROVED;
 import static com.clarkparsia.owlwg.testcase.filter.StatusFilter.EXTRACREDIT;
 import static com.clarkparsia.owlwg.testcase.filter.StatusFilter.PROPOSED;
+import static com.clarkparsia.owlwg.testcase.filter.SemanticsFilter.DIRECT;
+import static com.clarkparsia.owlwg.testcase.filter.SemanticsFilter.RDF;
 
 import java.net.URI;
 import java.text.SimpleDateFormat;
@@ -70,7 +72,7 @@ import com.clarkparsia.owlwg.testrun.TestRunResultVisitor;
  */
 public class AggregateResultWikiFormatter {
 
-	private final static List<TestRunner>	dlReasoners, elReasoners, qlReasoners, rlReasoners, syntaxCheckers;
+	private final static List<TestRunner>	dlReasoners, elReasoners, qlReasoners, rlReasoners, rdfReasoners, syntaxCheckers;
 	private final static Logger				log;
 	private final static TestRunResult		missingResult;
 
@@ -105,6 +107,10 @@ public class AggregateResultWikiFormatter {
 		rlReasoners = new ArrayList<TestRunner>( dlReasoners );
 		rlReasoners.add( testRunner( URI.create( "http://www.ivan-herman.net/Misc/2008/owlrl/" ), "OWLRL" ) );
 		rlReasoners.add( testRunner( URI.create( "http://jena.sourceforge.net/reasoners/owl2rl-exp1-reasoner" ), "Jena for OWL RL" ) );
+
+		rdfReasoners = new ArrayList<TestRunner>( );
+		rdfReasoners.add( testRunner( URI.create( "http://www.ivan-herman.net/Misc/2008/owlrl/" ), "OWLRL" ) );
+		rdfReasoners.add( testRunner( URI.create( "http://jena.sourceforge.net/reasoners/owl2rl-exp1-reasoner" ), "Jena for OWL RL" ) );
 
 		syntaxCheckers = new ArrayList<TestRunner>();
 		syntaxCheckers.add( testRunner( URI.create( "http://owlapi.sourceforge.net/" ), "OWLAPIv2" ) );
@@ -239,7 +245,7 @@ public class AggregateResultWikiFormatter {
 					new Object[] { EXTRACREDIT, "extracredit" }, } ) {
 				final StatusFilter f = (StatusFilter) pair[0];
 				List<Object> dlResults = new ArrayList<Object>();
-				for( final TestCase c : match( and( DL, f ), cases ) ) {
+				for( final TestCase c : match( and( DIRECT, and( DL, f ) ), cases ) ) {
 					List<RunTestType> testTypes = new ArrayList<RunTestType>(
 							possibleReasoningRunTypes( c ) );
 					Collections.sort( testTypes );
@@ -282,7 +288,7 @@ public class AggregateResultWikiFormatter {
 					new Object[] { EXTRACREDIT, "extracredit" }, } ) {
 				final StatusFilter f = (StatusFilter) pair[0];
 				List<Object> elResults = new ArrayList<Object>();
-				for( final TestCase c : match( and( EL, f ), cases ) ) {
+				for( final TestCase c : match( and( DIRECT, and( EL, f ) ), cases ) ) {
 					List<RunTestType> testTypes = new ArrayList<RunTestType>(
 							possibleReasoningRunTypes( c ) );
 					Collections.sort( testTypes );
@@ -325,7 +331,7 @@ public class AggregateResultWikiFormatter {
 					new Object[] { EXTRACREDIT, "extracredit" }, } ) {
 				final StatusFilter f = (StatusFilter) pair[0];
 				List<Object> qlResults = new ArrayList<Object>();
-				for( final TestCase c : match( and( QL, f ), cases ) ) {
+				for( final TestCase c : match( and( DIRECT, and( QL, f ) ), cases ) ) {
 					List<RunTestType> testTypes = new ArrayList<RunTestType>(
 							possibleReasoningRunTypes( c ) );
 					Collections.sort( testTypes );
@@ -368,7 +374,7 @@ public class AggregateResultWikiFormatter {
 					new Object[] { EXTRACREDIT, "extracredit" }, } ) {
 				final StatusFilter f = (StatusFilter) pair[0];
 				List<Object> rlResults = new ArrayList<Object>();
-				for( final TestCase c : match( and( RL, f ), cases ) ) {
+				for( final TestCase c : match( and( DIRECT, and( RL, f ) ), cases ) ) {
 					List<RunTestType> testTypes = new ArrayList<RunTestType>(
 							possibleReasoningRunTypes( c ) );
 					Collections.sort( testTypes );
@@ -400,6 +406,49 @@ public class AggregateResultWikiFormatter {
 					} );
 				}
 				template.setAttribute( "rl_results_" + pair[1], rlResults );
+			}
+
+			/*
+			 * RDF-based Reasoners (OWL Full)
+			 */
+			template.setAttribute( "rdf_reasoners", rdfReasoners );
+			for( Object[] pair : new Object[][] {
+					new Object[] { APPROVED, "approved" }, new Object[] { PROPOSED, "proposed" },
+					new Object[] { EXTRACREDIT, "extracredit" }, } ) {
+				final StatusFilter f = (StatusFilter) pair[0];
+				List<Object> rdfResults = new ArrayList<Object>();
+				for( final TestCase c : match( and( RDF, f ), cases ) ) {
+					List<RunTestType> testTypes = new ArrayList<RunTestType>(
+							possibleReasoningRunTypes( c ) );
+					Collections.sort( testTypes );
+					List<TestRunResult> caseRes = caseToResult.get( c );
+					final List<Object> byTypeList = new ArrayList<Object>();
+					for( final RunTestType t : testTypes ) {
+						final List<TestRunResult> ctRes = new ArrayList<TestRunResult>();
+						for( TestRunner runner : rdfReasoners ) {
+							TestRunResult trr = find( caseRes, c, runner, t );
+							if( trr == null )
+								trr = missingResult;
+							ctRes.add( trr );
+						}
+						Object o = new Object() {
+							public List<TestRunResult> getResults() {
+								return ctRes;
+							}
+
+							public RunTestType getType() {
+								return t;
+							}
+						};
+						byTypeList.add( o );
+					}
+
+					rdfResults.add( new Object() {
+						public final List<Object>	byType		= byTypeList;
+						public final TestCase		testCase	= c;
+					} );
+				}
+				template.setAttribute( "rdf_results_" + pair[1], rdfResults );
 			}
 
 			/*
