@@ -10,6 +10,7 @@ import static com.clarkparsia.owlwg.testcase.filter.ConjunctionFilter.and;
 import static com.clarkparsia.owlwg.testcase.filter.SatisfiedSyntaxConstraintFilter.DL;
 import static com.clarkparsia.owlwg.testcase.filter.SatisfiedSyntaxConstraintFilter.EL;
 import static com.clarkparsia.owlwg.testcase.filter.SatisfiedSyntaxConstraintFilter.QL;
+import static com.clarkparsia.owlwg.testcase.filter.SatisfiedSyntaxConstraintFilter.RL;
 import static com.clarkparsia.owlwg.testcase.filter.StatusFilter.APPROVED;
 import static com.clarkparsia.owlwg.testcase.filter.StatusFilter.EXTRACREDIT;
 import static com.clarkparsia.owlwg.testcase.filter.StatusFilter.PROPOSED;
@@ -69,7 +70,7 @@ import com.clarkparsia.owlwg.testrun.TestRunResultVisitor;
  */
 public class AggregateResultWikiFormatter {
 
-	private final static List<TestRunner>	dlReasoners, elReasoners, qlReasoners, syntaxCheckers;
+	private final static List<TestRunner>	dlReasoners, elReasoners, qlReasoners, rlReasoners, syntaxCheckers;
 	private final static Logger				log;
 	private final static TestRunResult		missingResult;
 
@@ -93,20 +94,20 @@ public class AggregateResultWikiFormatter {
 		dlReasoners = new ArrayList<TestRunner>();
 		dlReasoners.add( testRunner( URI.create( "http://clarkparsia.com/pellet" ), "Pellet" ) );
 		dlReasoners.add( testRunner( URI.create( "http://hermit-reasoner.com/" ), "HermiT" ) );
-		dlReasoners.add( testRunner( URI.create( "http://owl.cs.manchester.ac.uk/fact++/" ),
-				"FaCT++" ) );
+		dlReasoners.add( testRunner( URI.create( "http://owl.cs.manchester.ac.uk/fact++/" ), "FaCT++" ) );
 
 		elReasoners = new ArrayList<TestRunner>( dlReasoners );
-		elReasoners.add( testRunner( URI.create( "http://lat.inf.tu-dresden.de/systems/cel/" ),
-				"CEL" ) );
+		elReasoners.add( testRunner( URI.create( "http://lat.inf.tu-dresden.de/systems/cel/" ),	"CEL" ) );
 
 		qlReasoners = new ArrayList<TestRunner>( dlReasoners );
-		qlReasoners
-				.add( testRunner( URI.create( "http://www.dis.uniroma1.it/~quonto/" ), "QuOnto" ) );
+		qlReasoners.add( testRunner( URI.create( "http://www.dis.uniroma1.it/~quonto/" ), "QuOnto" ) );
+
+		rlReasoners = new ArrayList<TestRunner>( dlReasoners );
+		rlReasoners.add( testRunner( URI.create( "http://www.ivan-herman.net/Misc/2008/owlrl/" ), "OWLRL" ) );
+		rlReasoners.add( testRunner( URI.create( "http://jena.sourceforge.net/reasoners/owl2rl-exp1-reasoner" ), "Jena for OWL RL" ) );
 
 		syntaxCheckers = new ArrayList<TestRunner>();
-		syntaxCheckers
-				.add( testRunner( URI.create( "http://owlapi.sourceforge.net/" ), "OWLAPIv2" ) );
+		syntaxCheckers.add( testRunner( URI.create( "http://owlapi.sourceforge.net/" ), "OWLAPIv2" ) );
 
 		Comparator<TestRunner> nameComparator = new Comparator<TestRunner>() {
 			public int compare(TestRunner arg0, TestRunner arg1) {
@@ -118,6 +119,7 @@ public class AggregateResultWikiFormatter {
 		Collections.sort( dlReasoners, nameComparator );
 		Collections.sort( elReasoners, nameComparator );
 		Collections.sort( qlReasoners, nameComparator );
+		Collections.sort( rlReasoners, nameComparator );
 		Collections.sort( syntaxCheckers, nameComparator );
 
 		missingResult = new TestRunResult() {
@@ -355,6 +357,49 @@ public class AggregateResultWikiFormatter {
 					} );
 				}
 				template.setAttribute( "ql_results_" + pair[1], qlResults );
+			}
+
+			/*
+			 * RL Reasoners
+			 */
+			template.setAttribute( "rl_reasoners", rlReasoners );
+			for( Object[] pair : new Object[][] {
+					new Object[] { APPROVED, "approved" }, new Object[] { PROPOSED, "proposed" },
+					new Object[] { EXTRACREDIT, "extracredit" }, } ) {
+				final StatusFilter f = (StatusFilter) pair[0];
+				List<Object> rlResults = new ArrayList<Object>();
+				for( final TestCase c : match( and( RL, f ), cases ) ) {
+					List<RunTestType> testTypes = new ArrayList<RunTestType>(
+							possibleReasoningRunTypes( c ) );
+					Collections.sort( testTypes );
+					List<TestRunResult> caseRes = caseToResult.get( c );
+					final List<Object> byTypeList = new ArrayList<Object>();
+					for( final RunTestType t : testTypes ) {
+						final List<TestRunResult> ctRes = new ArrayList<TestRunResult>();
+						for( TestRunner runner : rlReasoners ) {
+							TestRunResult trr = find( caseRes, c, runner, t );
+							if( trr == null )
+								trr = missingResult;
+							ctRes.add( trr );
+						}
+						Object o = new Object() {
+							public List<TestRunResult> getResults() {
+								return ctRes;
+							}
+
+							public RunTestType getType() {
+								return t;
+							}
+						};
+						byTypeList.add( o );
+					}
+
+					rlResults.add( new Object() {
+						public final List<Object>	byType		= byTypeList;
+						public final TestCase		testCase	= c;
+					} );
+				}
+				template.setAttribute( "rl_results_" + pair[1], rlResults );
 			}
 
 			/*

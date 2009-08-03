@@ -14,6 +14,10 @@ result-summary(
   ql_results_approved,
   ql_results_proposed,
   ql_results_extracredit,
+  rl_reasoners,
+  rl_results_approved,
+  rl_results_proposed,
+  rl_results_extracredit,
   syntax_checkers,
   syntax_results_approved,
   syntax_results_proposed,
@@ -102,6 +106,32 @@ Produced: <timestamp>
 |-
 !Test!!Type!!<ql_reasoners:runner(r=it); separator=" !! ">
 <ql_results_proposed:reasoning_runs(results=it)>
+|}
+
+=== OWL 2 RL Test Cases ===
+
+==== OWL 2 RL Approved Test Cases ====
+
+{|border="1"
+|-
+!Test!!Type!!<rl_reasoners:runner(r=it); separator=" !! ">
+<rl_results_approved:reasoning_runs(results=it)>
+|}
+
+==== OWL 2 RL Extra Credit Test Cases ====
+
+{|border="1"
+|-
+!Test!!Type!!<rl_reasoners:runner(r=it); separator=" !! ">
+<rl_results_extracredit:reasoning_runs(results=it)>
+|}
+
+==== OWL 2 RL Proposed Test Cases ====
+
+{|border="1"
+|-
+!Test!!Type!!<rl_reasoners:runner(r=it); separator=" !! ">
+<rl_results_proposed:reasoning_runs(results=it)>
 |}
 
 == Syntactic Tests ==
