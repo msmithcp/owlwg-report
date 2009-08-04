@@ -107,8 +107,8 @@ public class AggregateResultWikiFormatter {
 		qlReasoners.add( testRunner( URI.create( "http://www.dis.uniroma1.it/~quonto/" ), "QuOnto" ) );
 
 		rlReasoners = new ArrayList<TestRunner>( dlReasoners );
-		//rlReasoners.add( testRunner( URI.create( "http://www.ivan-herman.net/Misc/2008/owlrl/" ), "OWLRL" ) );
-		//rlReasoners.add( testRunner( URI.create( "http://jena.sourceforge.net/reasoners/owl2rl-exp1-reasoner" ), "Jena for OWL RL" ) );
+		rlReasoners.add( testRunner( URI.create( "http://www.oracle.com/technology/tech/semantic_technologies/index.html#oracle-native-owl-reasoner" ), "Oracle 11g OWL Reasoner" ) );
+		rlReasoners.add( testRunner( URI.create( "http://jena.sourceforge.net/inference/OWL2RLExpt.html" ), "Jena" ) );
 
 		rdfReasoners = new ArrayList<TestRunner>( );
 		rdfReasoners.add( testRunner( URI.create( "http://www.ivan-herman.net/Misc/2008/owlrl/" ), "OWLRL" ) );
