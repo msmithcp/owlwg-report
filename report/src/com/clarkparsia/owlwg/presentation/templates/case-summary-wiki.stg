@@ -58,90 +58,90 @@ Produced: <timestamp>
 |-
 |Approved||<approved>
 |-
-|Proposed||<proposed>
-|-
 |Extra Credit||<extracredit>
+\<noinclude\>|-
+|Proposed||<proposed>
 |-
 |No Status||<nostatus>
 |-
-|Total||<total>
+|Total||<total>\</noinclude\>
 |}
 
 == By Type and Status ==
 
 {| border="1"
 |-
-! !! Approved !! Proposed !! Extra Credit !! No Status !! Total
+! !! Approved !! Extra Credit \<noinclude\>!! Proposed !! No Status !! Total\</noinclude\>
 |-
 ! Consistency
 | <consistency_approved>
-| <consistency_proposed>
 | <consistency_extracredit>
+\<noinclude\>| <consistency_proposed>
 | <consistency_nostatus>
-| <consistency>
+| <consistency>\</noinclude\>
 |-
 ! Inconsistency
 | <inconsistency_approved>
-| <inconsistency_proposed>
 | <inconsistency_extracredit>
+\<noinclude\>| <inconsistency_proposed>
 | <inconsistency_nostatus>
-| <inconsistency>
+| <inconsistency>\</noinclude\>
 |-
 ! Positive Entailment
 | <positive_entailment_approved>
-| <positive_entailment_proposed>
 | <positive_entailment_extracredit>
+\<noinclude\>| <positive_entailment_proposed>
 | <positive_entailment_nostatus>
-| <positive_entailment>
+| <positive_entailment>\</noinclude\>
 |-
 ! Negative Entailment
 | <negative_entailment_approved>
-| <negative_entailment_proposed>
 | <negative_entailment_extracredit>
+\<noinclude\>| <negative_entailment_proposed>
 | <negative_entailment_nostatus>
-| <negative_entailment>
+| <negative_entailment>\</noinclude\>
 |}
 
 == By Syntax Constraint and Status ==
 
 {| border="1"
 |-
-! !! Approved !! Proposed !! Extra Credit !! No Status !! Total
+! !! Approved !! Extra Credit \<noinclude\>!! Proposed !! No Status !! Total\</noinclude\>
 |-
 ! None (Full)
 | <approved>
-| <proposed>
 | <extracredit>
+\<noinclude\>| <proposed>
 | <nostatus>
-| <total>
+| <total>\</noinclude\>
 |-
 ! DL
 | <dl_approved>
-| <dl_proposed>
 | <dl_extracredit>
+\<noinclude\>| <dl_proposed>
 | <dl_nostatus>
-| <dl>
+| <dl>\</noinclude\>
 |-
 ! EL
 | <el_approved>
-| <el_proposed>
 | <el_extracredit>
-| <el_nostatus>
-| <el>
+\<noinclude\>| <el_nostatus>
+| <el_proposed>
+| <el>\</noinclude\>
 |-
 ! QL
 | <ql_approved>
-| <ql_proposed>
 | <ql_extracredit>
+\<noinclude\>| <ql_proposed>
 | <ql_nostatus>
-| <ql>
+| <ql>\</noinclude\>
 |-
 ! RL
 | <rl_approved>
-| <rl_proposed>
 | <rl_extracredit>
+\<noinclude\>| <rl_proposed>
 | <rl_nostatus>
-| <rl>
+| <rl>\</noinclude\>
 |}
 
 >>
