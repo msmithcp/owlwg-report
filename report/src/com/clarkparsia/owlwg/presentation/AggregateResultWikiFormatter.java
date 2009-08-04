@@ -105,6 +105,7 @@ public class AggregateResultWikiFormatter {
 
 		qlReasoners = new ArrayList<TestRunner>( dlReasoners );
 		qlReasoners.add( testRunner( URI.create( "http://www.dis.uniroma1.it/~quonto/" ), "QuOnto" ) );
+		qlReasoners.add( testRunner( URI.create( "http://kt.abdn.ac.uk/wiki/Quill" ), "Quill" ) );
 
 		rlReasoners = new ArrayList<TestRunner>( dlReasoners );
 		rlReasoners.add( testRunner( URI.create( "http://www.oracle.com/technology/tech/semantic_technologies/index.html#oracle-native-owl-reasoner" ), "Oracle 11g OWL Reasoner" ) );
@@ -116,6 +117,7 @@ public class AggregateResultWikiFormatter {
 
 		syntaxCheckers = new ArrayList<TestRunner>();
 		syntaxCheckers.add( testRunner( URI.create( "http://owlapi.sourceforge.net/" ), "OWLAPIv2" ) );
+		syntaxCheckers.add( testRunner( URI.create( "http://dipper.csd.abdn.ac.uk:8080/OWL2ProfileChecker/" ), "Aberdeen Profile Checker" ) );
 
 		Comparator<TestRunner> nameComparator = new Comparator<TestRunner>() {
 			public int compare(TestRunner arg0, TestRunner arg1) {
