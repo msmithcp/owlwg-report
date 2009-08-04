@@ -7,6 +7,8 @@ import static com.clarkparsia.owlwg.presentation.Utilities.possibleReasoningRunT
 import static com.clarkparsia.owlwg.presentation.Utilities.possibleSyntaxConstraintTests;
 import static com.clarkparsia.owlwg.runner.ReadOnlyTestRunner.testRunner;
 import static com.clarkparsia.owlwg.testcase.filter.ConjunctionFilter.and;
+import static com.clarkparsia.owlwg.testcase.filter.DisjunctionFilter.or;
+import static com.clarkparsia.owlwg.testcase.filter.NegationFilter.not;
 import static com.clarkparsia.owlwg.testcase.filter.SatisfiedSyntaxConstraintFilter.DL;
 import static com.clarkparsia.owlwg.testcase.filter.SatisfiedSyntaxConstraintFilter.EL;
 import static com.clarkparsia.owlwg.testcase.filter.SatisfiedSyntaxConstraintFilter.QL;
@@ -105,8 +107,8 @@ public class AggregateResultWikiFormatter {
 		qlReasoners.add( testRunner( URI.create( "http://www.dis.uniroma1.it/~quonto/" ), "QuOnto" ) );
 
 		rlReasoners = new ArrayList<TestRunner>( dlReasoners );
-		rlReasoners.add( testRunner( URI.create( "http://www.ivan-herman.net/Misc/2008/owlrl/" ), "OWLRL" ) );
-		rlReasoners.add( testRunner( URI.create( "http://jena.sourceforge.net/reasoners/owl2rl-exp1-reasoner" ), "Jena for OWL RL" ) );
+		//rlReasoners.add( testRunner( URI.create( "http://www.ivan-herman.net/Misc/2008/owlrl/" ), "OWLRL" ) );
+		//rlReasoners.add( testRunner( URI.create( "http://jena.sourceforge.net/reasoners/owl2rl-exp1-reasoner" ), "Jena for OWL RL" ) );
 
 		rdfReasoners = new ArrayList<TestRunner>( );
 		rdfReasoners.add( testRunner( URI.create( "http://www.ivan-herman.net/Misc/2008/owlrl/" ), "OWLRL" ) );
@@ -417,7 +419,7 @@ public class AggregateResultWikiFormatter {
 					new Object[] { EXTRACREDIT, "extracredit" }, } ) {
 				final StatusFilter f = (StatusFilter) pair[0];
 				List<Object> rdfResults = new ArrayList<Object>();
-				for( final TestCase c : match( and( RDF, f ), cases ) ) {
+				for( final TestCase c : match( and( or( not(DIRECT), not(DL) ), f ), cases ) ) {
 					List<RunTestType> testTypes = new ArrayList<RunTestType>(
 							possibleReasoningRunTypes( c ) );
 					Collections.sort( testTypes );

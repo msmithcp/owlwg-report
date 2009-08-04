@@ -36,6 +36,8 @@ Produced: <timestamp>
 
 === OWL 2 DL Test Cases ===
 
+This section shows results for all test cases in OWL 2 DL that are applicable under the direct semantics.
+
 ==== OWL 2 DL Approved Test Cases ====
 
 {|border="1"
@@ -61,6 +63,8 @@ Produced: <timestamp>
 |}
 
 === OWL 2 EL Test Cases ===
+
+This section shows results for all test cases in OWL 2 EL that are applicable under the direct semantics.
 
 ==== OWL 2 EL Approved Test Cases ====
 
@@ -88,6 +92,8 @@ Produced: <timestamp>
 
 === OWL 2 QL Test Cases ===
 
+This section shows results for all test cases in OWL 2 QL that are applicable under the direct semantics.
+
 ==== OWL 2 QL Approved Test Cases ====
 
 {|border="1"
@@ -114,6 +120,8 @@ Produced: <timestamp>
 
 === OWL 2 RL Test Cases ===
 
+This section shows results for all test cases in OWL 2 RL that are applicable under the direct semantics.
+
 ==== OWL 2 RL Approved Test Cases ====
 
 {|border="1"
@@ -138,9 +146,11 @@ Produced: <timestamp>
 <rl_results_proposed:reasoning_runs(results=it)>
 |}
 
-=== OWL 2 Direct-Semantics Test Cases ===
+=== RDF-Based Semantics Test Cases ===
 
-==== OWL 2 Direct-Semantics Approved Test Cases ====
+This section shows results for all test cases that are not applicable under the direct semantics.
+
+==== RDF-Based Semantics Approved Test Cases ====
 
 {|border="1"
 |-
@@ -148,7 +158,7 @@ Produced: <timestamp>
 <rdf_results_approved:reasoning_runs(results=it)>
 |}
 
-==== OWL 2 Direct-Semantics Extra Credit Test Cases ====
+==== RDF-Based Semantics Extra Credit Test Cases ====
 
 {|border="1"
 |-
@@ -156,7 +166,7 @@ Produced: <timestamp>
 <rdf_results_extracredit:reasoning_runs(results=it)>
 |}
 
-==== OWL 2 Direct-Semantics Proposed Test Cases ====
+==== RDF-Based Semantics Proposed Test Cases ====
 
 {|border="1"
 |-
