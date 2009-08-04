@@ -112,7 +112,7 @@ public class AggregateResultWikiFormatter {
 
 		rdfReasoners = new ArrayList<TestRunner>( );
 		rdfReasoners.add( testRunner( URI.create( "http://www.ivan-herman.net/Misc/2008/owlrl/" ), "OWLRL" ) );
-		rdfReasoners.add( testRunner( URI.create( "http://jena.sourceforge.net/reasoners/owl2rl-exp1-reasoner" ), "Jena for OWL RL" ) );
+		rdfReasoners.add( testRunner( URI.create( "http://jena.sourceforge.net/inference/OWL2RLExpt.html" ), "Jena" ) );
 
 		syntaxCheckers = new ArrayList<TestRunner>();
 		syntaxCheckers.add( testRunner( URI.create( "http://owlapi.sourceforge.net/" ), "OWLAPIv2" ) );
