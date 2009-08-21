@@ -22,6 +22,10 @@ result-summary(
   rdf_results_approved,
   rdf_results_proposed,
   rdf_results_extracredit, 
+  all_reasoners,
+  all_results_approved,
+  all_results_proposed,
+  all_results_extracredit, 
   syntax_checkers,
   syntax_results_approved,
   syntax_results_proposed,
@@ -183,6 +187,17 @@ This section shows results for all test cases that are not applicable under the 
 \</noinclude\>
 
 \<noinclude\>
+= Proposed tests =
+
+This section collects all proposed tests to give an overview of the implementation support that these tests currently have in general.
+Note that the table mixes reports for tools that assume direct and RDF-based semantics.
+
+{|border="1"
+|-
+!Test!!Type!!<all_reasoners:runner(r=it); separator=" !! ">
+<all_results_proposed:reasoning_runs(results=it)>
+|}
+
 = Syntax Test Results =
 
 == OWL 2 Syntax Constraint Test Cases ==

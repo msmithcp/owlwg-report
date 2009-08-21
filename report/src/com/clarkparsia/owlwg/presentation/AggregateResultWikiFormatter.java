@@ -74,7 +74,7 @@ import com.clarkparsia.owlwg.testrun.TestRunResultVisitor;
  */
 public class AggregateResultWikiFormatter {
 
-	private final static List<TestRunner>	dlReasoners, elReasoners, qlReasoners, rlReasoners, rdfReasoners, syntaxCheckers;
+	private final static List<TestRunner>	dlReasoners, elReasoners, qlReasoners, rlReasoners, rdfReasoners, syntaxCheckers, allReasoners;
 	private final static Logger				log;
 	private final static TestRunResult		missingResult;
 
@@ -102,22 +102,31 @@ public class AggregateResultWikiFormatter {
 
 		elReasoners = new ArrayList<TestRunner>( dlReasoners );
 		elReasoners.add( testRunner( URI.create( "http://lat.inf.tu-dresden.de/systems/cel/" ),	"CEL" ) );
+		elReasoners.add( testRunner( URI.create( "http://kt.abdn.ac.uk/wiki/Projects/REL" ),	"REL" ) );
 
 		qlReasoners = new ArrayList<TestRunner>( dlReasoners );
 		qlReasoners.add( testRunner( URI.create( "http://www.dis.uniroma1.it/~quonto/" ), "QuOnto" ) );
 		qlReasoners.add( testRunner( URI.create( "http://kt.abdn.ac.uk/wiki/Quill" ), "Quill" ) );
 
 		rlReasoners = new ArrayList<TestRunner>( dlReasoners );
-		rlReasoners.add( testRunner( URI.create( "http://www.oracle.com/technology/tech/semantic_technologies/index.html#oracle-native-owl-reasoner" ), "Oracle 11g OWL Reasoner" ) );
+		rlReasoners.add( testRunner( URI.create( "http://www.oracle.com/technology/tech/semantic_technologies/index.html#owlreasoner" ), "Oracle Database 11g OWL Reasoner" ) );
 		rlReasoners.add( testRunner( URI.create( "http://jena.sourceforge.net/inference/OWL2RLExpt.html" ), "Jena" ) );
 
 		rdfReasoners = new ArrayList<TestRunner>( );
+		rdfReasoners.add( testRunner( URI.create( "http://www.oracle.com/technology/tech/semantic_technologies/index.html#owlreasoner" ), "Oracle Database 11g OWL Reasoner" ) );
 		rdfReasoners.add( testRunner( URI.create( "http://www.ivan-herman.net/Misc/2008/owlrl/" ), "OWLRL" ) );
 		rdfReasoners.add( testRunner( URI.create( "http://jena.sourceforge.net/inference/OWL2RLExpt.html" ), "Jena" ) );
 
 		syntaxCheckers = new ArrayList<TestRunner>();
 		syntaxCheckers.add( testRunner( URI.create( "http://owlapi.sourceforge.net/" ), "OWLAPIv2" ) );
 		syntaxCheckers.add( testRunner( URI.create( "http://dipper.csd.abdn.ac.uk:8080/OWL2ProfileChecker/" ), "Aberdeen Profile Checker" ) );
+		
+		allReasoners = new ArrayList<TestRunner>(elReasoners);
+		allReasoners.add( testRunner( URI.create( "http://www.dis.uniroma1.it/~quonto/" ), "QuOnto" ) );
+		allReasoners.add( testRunner( URI.create( "http://kt.abdn.ac.uk/wiki/Quill" ), "Quill" ) );
+		allReasoners.add( testRunner( URI.create( "http://www.oracle.com/technology/tech/semantic_technologies/index.html#owlreasoner" ), "Oracle Database 11g OWL Reasoner" ) );
+		allReasoners.add( testRunner( URI.create( "http://jena.sourceforge.net/inference/OWL2RLExpt.html" ), "Jena" ) );
+		allReasoners.add( testRunner( URI.create( "http://www.ivan-herman.net/Misc/2008/owlrl/" ), "OWLRL" ) );		
 
 		Comparator<TestRunner> nameComparator = new Comparator<TestRunner>() {
 			public int compare(TestRunner arg0, TestRunner arg1) {
@@ -130,6 +139,8 @@ public class AggregateResultWikiFormatter {
 		Collections.sort( elReasoners, nameComparator );
 		Collections.sort( qlReasoners, nameComparator );
 		Collections.sort( rlReasoners, nameComparator );
+		Collections.sort( rdfReasoners, nameComparator );
+		Collections.sort( allReasoners, nameComparator );
 		Collections.sort( syntaxCheckers, nameComparator );
 
 		missingResult = new TestRunResult() {
@@ -229,8 +240,10 @@ public class AggregateResultWikiFormatter {
 			Map<TestCase<OWLOntology>, List<TestRunResult>> caseToResult = new HashMap<TestCase<OWLOntology>, List<TestRunResult>>();
 			for( TestCase<OWLOntology> t : cases )
 				caseToResult.put( t, new ArrayList<TestRunResult>() );
-			for( TestRunResult r : results )
-				caseToResult.get( r.getTestCase() ).add( r );
+			for( TestRunResult r : results ) {
+				if ( r != null )
+					caseToResult.get( r.getTestCase() ).add( r );
+			}
 
 			/*
 			 * General info about report
@@ -422,6 +435,7 @@ public class AggregateResultWikiFormatter {
 				final StatusFilter f = (StatusFilter) pair[0];
 				List<Object> rdfResults = new ArrayList<Object>();
 				for( final TestCase c : match( and( or( not(DIRECT), not(DL) ), f ), cases ) ) {
+				//for( final TestCase c : match( and( RDF, f ), cases ) ) {
 					List<RunTestType> testTypes = new ArrayList<RunTestType>(
 							possibleReasoningRunTypes( c ) );
 					Collections.sort( testTypes );
@@ -453,6 +467,48 @@ public class AggregateResultWikiFormatter {
 					} );
 				}
 				template.setAttribute( "rdf_results_" + pair[1], rdfResults );
+			}
+
+			/*
+			 * All Reasoners (check proposed tests)
+			 */
+			template.setAttribute( "all_reasoners", allReasoners );
+			for( Object[] pair : new Object[][] {
+					new Object[] { PROPOSED, "proposed" } } ) {
+				final StatusFilter f = (StatusFilter) pair[0];
+				List<Object> allResults = new ArrayList<Object>();
+				for( final TestCase c : match( f, cases ) ) {
+					List<RunTestType> testTypes = new ArrayList<RunTestType>(
+							possibleReasoningRunTypes( c ) );
+					Collections.sort( testTypes );
+					List<TestRunResult> caseRes = caseToResult.get( c );
+					final List<Object> byTypeList = new ArrayList<Object>();
+					for( final RunTestType t : testTypes ) {
+						final List<TestRunResult> ctRes = new ArrayList<TestRunResult>();
+						for( TestRunner runner : allReasoners ) {
+							TestRunResult trr = find( caseRes, c, runner, t );
+							if( trr == null )
+								trr = missingResult;
+							ctRes.add( trr );
+						}
+						Object o = new Object() {
+							public List<TestRunResult> getResults() {
+								return ctRes;
+							}
+
+							public RunTestType getType() {
+								return t;
+							}
+						};
+						byTypeList.add( o );
+					}
+
+					allResults.add( new Object() {
+						public final List<Object>	byType		= byTypeList;
+						public final TestCase		testCase	= c;
+					} );
+				}
+				template.setAttribute( "all_results_" + pair[1], allResults );
 			}
 
 			/*
